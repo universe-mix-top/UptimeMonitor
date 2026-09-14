@@ -115,7 +115,9 @@ class ControllerDb:
                                      'JOIN urls ON monitors.url_id = urls.url_id '
                                      'WHERE user_id = $1', user_id)
 
-    async def get_user_logs(self, tg_id:int, addr:str) -> list[Record]:
+    async def get_user_logs(self, tg_id:int, url:str) -> list[Record]:
+        user_id = await self.get_user_id(tg_id)
+        url_id = await self.get_url_id(url)
         return await self.pool.fetch('SELECT '
                                      '    url, '
                                      '    requests_log.datetime, '
@@ -124,11 +126,9 @@ class ControllerDb:
                                      'FROM users '
                                      '        JOIN monitors_presets ON users.user_id = monitors_presets.user_id '
                                      '        JOIN monitors ON monitors_presets.monitor_id = monitors.monitor_id '
-                                     '        JOIN urls ON monitors.url_id = urls.url_id '
-                                     '        JOIN requests_log ON urls.url_id = requests_log.url_id '
-                                     'WHERE users.tg_id = $1 and '
+                                     'WHERE monitors.url_id = $1 and '
                                      '      requests_log.timing_id >= monitors.timing_id and '
-                                     '      urls.url = $2', tg_id, addr)
+                                     '      requests_log.url_id = $2', user_id, url_id)
 
     async def get_user_monitors_presets(self, tg_id:int) -> list[Record]:
         user_id = await self.get_user_id(tg_id)
