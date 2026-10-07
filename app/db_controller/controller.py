@@ -34,12 +34,14 @@ class ControllerDb:
             await self.pool.close()
             self.pool = None
 
-    async def user_registration(self, tg_id: int) -> str:
-        return await self.pool.execute('INSERT INTO '
-                                              '     users(tg_id) '
-                                              'values ($1) '
-                                              'ON CONFLICT DO NOTHING '
-                                              'RETURNING 1', tg_id)
+    async def user_registration(self, tg_id: int) -> int | None:
+        """Возвращает 1 если пользователь создан, None если уже существовал."""
+        result = await self.pool.fetchrow(
+            'INSERT INTO users(tg_id) VALUES ($1) '
+            'ON CONFLICT (tg_id) DO NOTHING RETURNING 1',
+            tg_id
+        )
+        return int(result[0]) if result else None
 
     @cached(cache=cache)
     async def get_user_id(self, tg_id: int) -> str | None:
@@ -85,18 +87,21 @@ class ControllerDb:
             return None
         return monitor_id.get('monitor_id')
 
-    async def del_monitor(self, monitor_id:str):
-        """удалить монитор ели не используется"""
+    async def del_monitor(self, monitor_id: str | None):
+        """Удалить монитор, если он не используется."""
+        if monitor_id is None:
+            return
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                res = await conn.fetchrow('SELECT '
-                                          '     user_id, '
-                                          '     monitor_id '
-                                          'FROM monitors_presets '
-                                          'WHERE monitor_id = $1 ', monitor_id)
+                res = await conn.fetchrow(
+                    'SELECT user_id, monitor_id FROM monitors_presets '
+                    'WHERE monitor_id = $1',
+                    monitor_id
+                )
                 if res is None:
-                    return await conn.execute('DELETE FROM monitors '
-                                              'WHERE monitor_id = $1', monitor_id)
+                    return await conn.execute(
+                        'DELETE FROM monitors WHERE monitor_id = $1', monitor_id
+                    )
 
     async def get_monitor_addr_list(self, timing_id:int) -> list[Record]:
         return await self.pool.fetch('SELECT '
@@ -150,13 +155,17 @@ class ControllerDb:
                                      'FROM timings '
                                      'ORDER BY timing')
 
-    async def set_requests_log(self, result:dict, timing_id:int) -> str:
-        url_id = result.get('url').get('url_id')
+    async def set_requests_log(self, result: dict, timing_id: int) -> None:
+        url = result.get('url')
+        if url is None:
+            return
+        url_id = url.get('url_id')
+        if url_id is None:
+            return
         res_code = result.get('status')
         ping = result.get('ping_ms')
-        return await self.pool.execute(
-            'INSERT INTO '
-            '    requests_log(url_id, timing_id, res_code, ping) '
+        await self.pool.execute(
+            'INSERT INTO requests_log(url_id, timing_id, res_code, ping) '
             'VALUES ($1, $2, $3, $4)',
             url_id,
             timing_id,
@@ -164,40 +173,42 @@ class ControllerDb:
             ping
         )
 
-    async def set_user_monitor(self, tg_id:int, url:str, timing_id:int) -> list[Record]:
+    async def set_user_monitor(self, tg_id: int, url: str, timing_id: int) -> bool:
+        """Возвращает True если монитор добавлен, False если уже существует."""
         user_id = await self.get_user_id(tg_id)
         url_id = await self.get_url_id(url)
         monitor_id = await self.get_monitor_id(url_id, timing_id)
+        result = await self.pool.fetchrow(
+            'INSERT INTO monitors_presets (user_id, monitor_id) '
+            'VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING 1',
+            user_id, monitor_id
+        )
+        return result is not None
 
-        return await self.pool.fetch('INSERT INTO '
-                                      '    monitors_presets (user_id, monitor_id) '
-                                      'VALUES ($1, $2) ' 
-                                      'ON CONFLICT  DO NOTHING '
-                                      'RETURNING user_id, monitor_id', user_id, monitor_id)
-
-    async def change_user_monitor(self, tg_id:int, url:str, timing_id:int) -> str:
+    async def change_user_monitor(self, tg_id: int, url: str, timing_id: int) -> str:
         user_id = await self.get_user_id(tg_id)
         url_id = await self.get_url_id(url)
         new_monitor_id = await self.get_monitor_id(url_id, timing_id)
 
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                old_monitor_id = await conn.fetchrow('SELECT '
-                                                     '    monitors_presets.monitor_id '
-                                                     'FROM monitors_presets '
-                                                     'JOIN monitors ON monitors_presets.monitor_id = monitors.monitor_id '
-                                                     'WHERE user_id = $1 and '
-                                                     '      url_id = $2', user_id, url_id)
-                old_monitor_id = old_monitor_id.get('monitor_id')
-
-                if old_monitor_id is None:
+                old_monitor = await conn.fetchrow(
+                    'SELECT monitors_presets.monitor_id '
+                    'FROM monitors_presets '
+                    'JOIN monitors ON monitors_presets.monitor_id = monitors.monitor_id '
+                    'WHERE user_id = $1 AND url_id = $2',
+                    user_id, url_id
+                )
+                if old_monitor is None:
                     raise ValueError('нет монитора который можно изменить')
+                old_monitor_id = old_monitor.get('monitor_id')
 
-                res = await conn.execute('UPDATE '
-                                          '    monitors_presets '
-                                          'SET monitor_id = $1 '
-                                          'WHERE monitor_id = $2 AND '
-                                          '      user_id = $3', new_monitor_id, old_monitor_id, user_id)
+                res = await conn.execute(
+                    'UPDATE monitors_presets '
+                    'SET monitor_id = $1 '
+                    'WHERE monitor_id = $2 AND user_id = $3',
+                    new_monitor_id, old_monitor_id, user_id
+                )
         await self.del_monitor(old_monitor_id)
         return res
 

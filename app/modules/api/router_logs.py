@@ -48,7 +48,7 @@ async def get_monitors(tg_id: int = Query(..., description="ID пользова�
     return result
 
 
-@router_log.get("/user/{tg_id}", response_model=dict | dict[str,list[LogEntry]], summary="Логи пользователя с выбором URL")
+@router_log.get("/user/{tg_id}", summary="Логи пользователя с выбором URL")
 async def get_user_logs_endpoint(
     tg_id: int,
     url: Optional[str] = Query(None, description="URL для фильтрации логов (необязательно)"),
@@ -60,16 +60,14 @@ async def get_user_logs_endpoint(
     """
     try:
         if url is None:
-            # Возвращаем список URL пользователя
             addr_list = await get_user_addr_list(tg_id)
             if not addr_list:
                 return {'urls':[]}
             return {'urls':[a.get("url") for a in addr_list]}
 
-        # Возвращаем логи для конкретного URL
         logs = await get_user_logs(tg_id, url)
         if not logs:
-            return {'msg': 'нет логов'}
+            return {"logs": []}
 
         result = []
         for log in logs:
@@ -81,7 +79,7 @@ async def get_user_logs_endpoint(
                 res_code=log.get("res_code"),
                 ping=log.get("ping"),
             ))
-        return {'logs': result}
+        return {"logs": result}
     except HTTPException:
         raise
     except Exception as e:

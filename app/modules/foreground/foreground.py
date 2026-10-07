@@ -21,7 +21,7 @@ def is_link_on_item_in_list(link: str, addr_list: list[Record], item_name:str) -
         return link.get(item_name)
     return None
 
-def timing_id_dy_description(description:str, timings:list[Record]) -> int|None:
+def timing_id_by_description(description: str, timings: list[Record]) -> int | None:
     for timing in timings:
         if timing.get('description') == description:
             return int(timing.get('timing_id'))
@@ -33,8 +33,8 @@ def is_addr_link(link: str, addr_list: list[Record]) -> str|None:
 def is_timing_link(link: str, addr_list: list[Record]) -> str|None:
     return is_link_on_item_in_list(link, addr_list, 'description')
 
-def parse_logs(logs:list[Record], url:str):
-    def parse(log:Record):
+def parse_logs(logs: list[Record], url: str):
+    def parse(log: Record):
         datetime = log.get('datetime').strftime("%d.%m.%Y %H:%M:%S")
         res_code = log.get('res_code')
         ping = log.get('ping')
@@ -84,7 +84,7 @@ def parse_monitors_preset(monitors_preset:list[Record]) -> str:
         parsed_monitors_preset = 'список сайтов пуст'
     return parsed_monitors_preset
 
-async def user_registration(tg_id:int):
+async def user_registration(tg_id:int) -> int | None:
     return await db_controller.user_registration(tg_id)
 
 async def get_user_id(tg_id:int):
@@ -108,5 +108,5 @@ async def set_user_monitor(tg_id:int, url:str, timing:int) -> str:
 async def change_user_monitor(tg_id:int, url:str, timing:int) -> str:
     return await db_controller.change_user_monitor(tg_id, url, timing)
 
-async def del_user_monitor(tg_id:int, url:str) -> str:
+async def del_user_monitor(tg_id:int, url:str) -> str | None:
     return await db_controller.del_user_monitor(tg_id, url)

@@ -2,7 +2,7 @@ import logging
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 from app.modules.foreground.foreground import get_timings, URL_REG, IP_ADDR_REG, parse_timings, is_timing_link, TIMING_DESCRIPTION, \
-    change_user_monitor, timing_id_dy_description, is_addr_link, parse_address_list, get_user_addr_list
+    change_user_monitor, timing_id_by_description, is_addr_link, parse_address_list, get_user_addr_list
 from .states.states import ChangeSettingsState, SettingsState
 from .keyboards.keyboards import start_keyboard
 
@@ -58,7 +58,7 @@ async def settings_log_waiting_timing_change(message: types.Message, state: FSMC
     if not timing:
         return await incorrect_timing(message)
 
-    timing_id = timing_id_dy_description(timing, timings)
+    timing_id = timing_id_by_description(timing, timings)
 
     tg_id = message.from_user.id
     url = await state.get_value('url')
