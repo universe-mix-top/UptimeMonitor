@@ -3,7 +3,7 @@ import logging
 from app.modules.foreground.foreground import db_controller_connect, db_controller_disconnect
 
 from aiogram import Bot, Dispatcher
-from app.core.config import config
+from core.config import config
 from handlers import router
 
 

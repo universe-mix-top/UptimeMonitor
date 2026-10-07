@@ -33,9 +33,8 @@ def is_addr_link(link: str, addr_list: list[Record]) -> str|None:
 def is_timing_link(link: str, addr_list: list[Record]) -> str|None:
     return is_link_on_item_in_list(link, addr_list, 'description')
 
-def parse_logs(logs:list[Record]):
+def parse_logs(logs:list[Record], url:str):
     def parse(log:Record):
-        url = log.get('url')
         datetime = log.get('datetime').strftime("%d.%m.%Y %H:%M:%S")
         res_code = log.get('res_code')
         ping = log.get('ping')
@@ -87,6 +86,9 @@ def parse_monitors_preset(monitors_preset:list[Record]) -> str:
 
 async def user_registration(tg_id:int):
     return await db_controller.user_registration(tg_id)
+
+async def get_user_id(tg_id:int):
+    return await db_controller.get_user_id(tg_id)
 
 async def get_user_addr_list(tg_id:int) -> list[Record]:
     return await db_controller.get_user_addr_list(tg_id)

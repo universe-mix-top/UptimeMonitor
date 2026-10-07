@@ -32,6 +32,7 @@ class ControllerDb:
     async def disconnect(self):
         if self.pool:
             await self.pool.close()
+            self.pool = None
 
     async def user_registration(self, tg_id: int) -> str:
         return await self.pool.execute('INSERT INTO '
@@ -41,48 +42,48 @@ class ControllerDb:
                                               'RETURNING 1', tg_id)
 
     @cached(cache=cache)
-    async def get_user_id(self, tg_id:int) -> str:
-        user_id = await self.pool.fetchrow('SELECT '
-                                           '    user_id '
-                                           'FROM users '
-                                           'WHERE tg_id = $1;', tg_id)
-        user_id = user_id.get('user_id')
-        return user_id
+    async def get_user_id(self, tg_id: int) -> str | None:
+        user_id = await self.pool.fetchrow(
+            'SELECT user_id FROM users WHERE tg_id = $1;', tg_id
+        )
+        if user_id is None:
+            return None
+        return user_id.get('user_id')
 
     @cached(cache=cache)
-    async def get_url_id(self, url:str) -> str:
+    async def get_url_id(self, url: str) -> str | None:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                url_id = await conn.fetchrow('SELECT '
-                                             '    urls.url_id '
-                                             'FROM urls '
-                                             'WHERE url = $1', url)
-
+                url_id = await conn.fetchrow(
+                    'SELECT urls.url_id FROM urls WHERE url = $1', url
+                )
                 if url_id is None:
-                    url_id = await conn.fetchrow('INSERT INTO '
-                                                 '    urls (url) '
-                                                 'VALUES ($1) '
-                                                 'ON CONFLICT (url) DO NOTHING '
-                                                 'RETURNING url_id', url)
-        url_id = url_id.get('url_id')
-        return url_id
+                    url_id = await conn.fetchrow(
+                        'INSERT INTO urls (url) VALUES ($1) '
+                        'ON CONFLICT (url) DO NOTHING RETURNING url_id', url
+                    )
+        if url_id is None:
+            return None
+        return url_id.get('url_id')
 
     @cached(cache=cache)
-    async def get_monitor_id(self, url_id:str, timing_id:str|int) -> str:
+    async def get_monitor_id(self, url_id: str, timing_id: str | int) -> str | None:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                monitor_id = await conn.fetchrow('SELECT '
-                                                 '    monitor_id '
-                                                 'FROM monitors '
-                                                 'WHERE url_id = $1 AND '
-                                                 '      timing_id = $2 ', url_id, timing_id)
+                monitor_id = await conn.fetchrow(
+                    'SELECT monitor_id FROM monitors '
+                    'WHERE url_id = $1 AND timing_id = $2',
+                    url_id, timing_id
+                )
                 if monitor_id is None:
-                    monitor_id = await conn.fetchrow('INSERT INTO '
-                                                     '    monitors (url_id, timing_id) '
-                                                     'VALUES ($1, $2) '
-                                                     '    RETURNING monitor_id ', url_id, timing_id)
-        monitor_id = monitor_id.get('monitor_id')
-        return monitor_id
+                    monitor_id = await conn.fetchrow(
+                        'INSERT INTO monitors (url_id, timing_id) '
+                        'VALUES ($1, $2) RETURNING monitor_id',
+                        url_id, timing_id
+                    )
+        if monitor_id is None:
+            return None
+        return monitor_id.get('monitor_id')
 
     async def del_monitor(self, monitor_id:str):
         """удалить монитор ели не используется"""
@@ -119,14 +120,13 @@ class ControllerDb:
         user_id = await self.get_user_id(tg_id)
         url_id = await self.get_url_id(url)
         return await self.pool.fetch('SELECT '
-                                     '    url, '
                                      '    requests_log.datetime, '
                                      '    requests_log.res_code, '
                                      '    requests_log.ping '
-                                     'FROM users '
-                                     '        JOIN monitors_presets ON users.user_id = monitors_presets.user_id '
-                                     '        JOIN monitors ON monitors_presets.monitor_id = monitors.monitor_id '
-                                     'WHERE monitors.url_id = $1 and '
+                                     'FROM monitors '
+                                     '        JOIN monitors_presets ON monitors.monitor_id = monitors_presets.monitor_id '
+                                     '        JOIN requests_log ON monitors.url_id = requests_log.url_id '
+                                     'WHERE monitors_presets.user_id = $1 and '
                                      '      requests_log.timing_id >= monitors.timing_id and '
                                      '      requests_log.url_id = $2', user_id, url_id)
 
@@ -201,32 +201,34 @@ class ControllerDb:
         await self.del_monitor(old_monitor_id)
         return res
 
-    async def del_user_monitor(self, tg_id:int, url:str) -> str:
+    async def del_user_monitor(self, tg_id: int, url: str) -> str | None:
         user_id = await self.get_user_id(tg_id)
+        if user_id is None:
+            return None
         url_id = await self.get_url_id(url)
 
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                # удалить монитор из списка пользователя
-                monitor_id_list = await conn.fetch('SELECT '
-                                                   '    monitor_id '
-                                                   'FROM monitors '
-                                                   'WHERE url_id = $1', url_id)
+                monitor_id_list = await conn.fetch(
+                    'SELECT monitor_id FROM monitors WHERE url_id = $1', url_id
+                )
+                if not monitor_id_list:
+                    return None
 
-                monitor_id_list = [str(monitor_id.get('monitor_id')) for monitor_id in monitor_id_list]
-                monitor_id_list = ', '.join(monitor_id_list)
+                monitor_ids = [int(m.get('monitor_id')) for m in monitor_id_list]
+                placeholders = ', '.join(f'${i+2}' for i in range(len(monitor_ids)))
 
-                monitor_id = await conn.fetchrow('DELETE FROM monitors_presets '
-                                                 'WHERE user_id = $1 AND '
-                                                f'      monitor_id IN ({monitor_id_list}) '
-                                                 'RETURNING monitor_id', user_id)
-                monitor_id = monitor_id.get('monitor_id')
+                monitor_id = await conn.fetchrow(
+                    f'DELETE FROM monitors_presets '
+                    f'WHERE user_id = $1 AND monitor_id IN ({placeholders}) '
+                    f'RETURNING monitor_id',
+                    user_id, *monitor_ids
+                )
+                monitor_id = monitor_id.get('monitor_id') if monitor_id else None
 
-        await self.del_monitor(monitor_id)
+        if monitor_id:
+            await self.del_monitor(monitor_id)
         return monitor_id
 
 
 db_controller = ControllerDb()
-
-if __name__ == '__main__':
-    db_controller.mon

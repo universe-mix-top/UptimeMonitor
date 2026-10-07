@@ -18,7 +18,7 @@ SIMULTANEOUS_REQUESTS = int(config['simultaneous_requests']) if config['simultan
 SEMAPHORE = asyncio.Semaphore(SIMULTANEOUS_REQUESTS)
 logger = logging.getLogger(__name__)
 
-async def get_timing_id(minutes:int):
+async def get_timing_id(minutes:int) -> int:
     timings = await db_controller.get_timings()
     timings = [timing.values() for timing in timings]
 
@@ -95,5 +95,6 @@ if __name__ == '__main__':
     async def activate():
         await db_controller.connect()
         await monitor_job()
-        await db_controller.connect()
+        await db_controller.disconnect()
+
     asyncio.run(activate())

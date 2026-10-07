@@ -36,11 +36,11 @@ async def check_logs(message: types.Message, state: FSMContext):
 
     tg_id = message.from_user.id
     logs = await get_user_logs(tg_id, addr)
-    parsed_logs = parse_logs(logs)
+    parsed_logs = parse_logs(logs, addr)
 
     await state.clear()
     if parsed_logs:
-        await message.answer(parsed_logs, reply_markup=start_keyboard)
+        return await message.answer(parsed_logs, reply_markup=start_keyboard)
 
     await message.answer('еще нет логов', reply_markup=start_keyboard)
 
