@@ -1,17 +1,9 @@
-from app.modules.foreground.foreground import (
+from .foreground import (
     URL_REG,
     IP_ADDR_REG,
     TIMING_DESCRIPTION,
     db_controller_connect,
     db_controller_disconnect,
-    is_link_on_item_in_list,
-    timing_id_by_description,
-    is_addr_link,
-    is_timing_link,
-    parse_logs,
-    parse_timings,
-    parse_address_list,
-    parse_monitors_preset,
     user_registration,
     get_user_id,
     get_user_addr_list,
@@ -21,6 +13,18 @@ from app.modules.foreground.foreground import (
     set_user_monitor,
     change_user_monitor,
     del_user_monitor,
+)
+from .checkers import (
+    is_link_on_item_in_list,
+    timing_id_by_description,
+    is_addr_link,
+    is_timing_link
+)
+from .parsers import (
+    parse_logs,
+    parse_timings,
+    parse_address_list,
+    parse_monitors_preset
 )
 
 __all__ = [
