@@ -15,7 +15,6 @@ from .foreground import (
     del_user_monitor,
 )
 from .checkers import (
-    is_link_on_item_in_list,
     timing_id_by_description,
     is_addr_link,
     is_timing_link
@@ -33,7 +32,6 @@ __all__ = [
     "TIMING_DESCRIPTION",
     "db_controller_connect",
     "db_controller_disconnect",
-    "is_link_on_item_in_list",
     "timing_id_by_description",
     "is_addr_link",
     "is_timing_link",

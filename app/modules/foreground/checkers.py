@@ -5,14 +5,15 @@ def is_link_on_item_in_list(link: str, addr_list: list[Record], item_name:str) -
         if 0 < int(link) <= len(addr_list):
             return addr_list[int(link) - 1].get(item_name)
 
-    if link in addr_list:
-        return link.get(item_name)
+    if link in map(lambda addr: addr.get(item_name), addr_list):
+        return link
     return None
 
 def timing_id_by_description(description: str, timings: list[Record]) -> int | None:
     for timing in timings:
         if timing.get('description') == description:
             return int(timing.get('timing_id'))
+    return None
 
 
 def is_addr_link(link: str, addr_list: list[Record]) -> str|None:

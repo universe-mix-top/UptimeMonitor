@@ -6,13 +6,6 @@ from app.db_controller.controller import db_controller
 
 from requester import monitor_job
 
-# Настройка логов
-logging.basicConfig(
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-    format="[%(asctime)s.%(msecs)05d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
-)
-logger = logging.getLogger(__name__)
 
 async def main():
     await db_controller.connect()
@@ -43,4 +36,12 @@ async def main():
 
 
 if __name__ == '__main__':
+    # Настройка логов
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+        format="[%(asctime)s.%(msecs)05d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+
     asyncio.run(main())

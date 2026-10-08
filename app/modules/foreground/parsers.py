@@ -47,6 +47,4 @@ def parse_monitors_preset(monitors_preset:list[Record]) -> str:
             monitors_preset
         )
     )
-    if parsed_monitors_preset is None:
-        parsed_monitors_preset = 'список сайтов пуст'
     return parsed_monitors_preset

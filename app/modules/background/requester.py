@@ -6,12 +6,6 @@ import logging
 from app.core.config import config
 from app.db_controller.controller import db_controller
 
-if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        datefmt="%Y-%m-%d %H:%M:%S",
-        format="[%(asctime)s.%(msecs)05d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
-    )
 
 config = config['Requester']
 SIMULTANEOUS_REQUESTS = int(config['simultaneous_requests']) if config['simultaneous_requests'] else 100
@@ -92,6 +86,11 @@ async def monitor_job():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+        format="[%(asctime)s.%(msecs)05d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    )
     async def activate():
         await db_controller.connect()
         await monitor_job()
