@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.modules.foreground.foreground import user_registration, get_user_id
+from app.modules.foreground import user_registration, get_user_id
 
 router_reg = APIRouter(tags=["UptimeMonitor API"])
 

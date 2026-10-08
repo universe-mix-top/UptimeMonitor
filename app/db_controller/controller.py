@@ -14,8 +14,9 @@ class ControllerDb:
     host = db_config['db_host'] if db_config['db_host'] else 'localhost'
     port = db_config['db_port'] if db_config['db_port'] else '5432'
     search_path = db_config['db_schema_name'] if db_config['db_schema_name'] else 'public'
-    cache_maxsize = config["Cache"]["maxsize"]
-    cache_ttl = config["Cache"]["time_to_life"]
+
+    cache_maxsize = int(config["Cache"]["maxsize"]) if config["Cache"]["maxsize"] else 256
+    cache_ttl = int(config["Cache"]["time_to_life"]) if config["Cache"]["time_to_life"] else 600
 
     user_cache = TTLCache(maxsize=cache_maxsize, ttl=cache_ttl)
     url_cache = TTLCache(maxsize=cache_maxsize, ttl=cache_ttl)

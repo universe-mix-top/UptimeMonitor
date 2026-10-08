@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.modules.foreground.foreground import (
+from app.modules.foreground import (
     get_timings,
     set_user_monitor,
     change_user_monitor,

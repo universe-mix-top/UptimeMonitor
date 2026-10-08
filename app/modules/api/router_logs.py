@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from app.modules.foreground.foreground import (
+from app.modules.foreground import (
     get_user_monitors_presets,
     get_user_addr_list,
     get_user_logs
