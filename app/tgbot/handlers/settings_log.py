@@ -2,7 +2,7 @@ import logging
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
-from app.modules.foreground.foreground import get_user_monitors_presets, parse_monitors_preset
+from app.modules.foreground import get_user_monitors_presets, parse_monitors_preset
 from .keyboards.keyboards import settings_inl_keyboard, start_keyboard
 from .states.states import SettingsState
 

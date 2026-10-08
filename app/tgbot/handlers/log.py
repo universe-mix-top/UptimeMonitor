@@ -1,6 +1,6 @@
 import logging
 from aiogram import Router, types, F
-from app.modules.foreground.foreground import get_user_addr_list, get_user_logs, URL_REG, IP_ADDR_REG, parse_logs, is_addr_link, parse_address_list
+from app.modules.foreground import get_user_addr_list, get_user_logs, URL_REG, IP_ADDR_REG, parse_logs, is_addr_link, parse_address_list
 from aiogram.fsm.context import FSMContext
 from .states.states import LogState
 from .keyboards.keyboards import start_keyboard

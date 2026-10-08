@@ -2,7 +2,7 @@ import logging
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
-from app.modules.foreground.foreground import URL_REG, IP_ADDR_REG, is_addr_link, del_user_monitor, get_user_addr_list, parse_address_list
+from app.modules.foreground import URL_REG, IP_ADDR_REG, is_addr_link, del_user_monitor, get_user_addr_list, parse_address_list
 from .keyboards.keyboards import start_keyboard
 from .states.states import DelSettingsState, SettingsState
 

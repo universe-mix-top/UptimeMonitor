@@ -25,8 +25,6 @@ async def main():
     logger.info('тг бот начал работу')
     try:
         await dp.start_polling(bot)
-    # except Exception as e:
-    #     print('тг бот завершил работу')
     finally:
         await db_controller_disconnect()
 
