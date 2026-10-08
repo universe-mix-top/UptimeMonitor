@@ -43,11 +43,23 @@ async def check_site(client: httpx.AsyncClient, url: Record, semaphore: asyncio.
 
         except httpx.TimeoutException:
             logger.warning(f"  ❌ {url.get('url'):30} | DOWN | timeout")
-            return {"url": url, "status": None, "ping_ms": None, "is_up": False, "error": "timeout"}
+            return {
+                "url": url,
+                "status": None,
+                "ping_ms": None,
+                "is_up": False,
+                "error": "timeout"
+            }
 
         except Exception as e:
             logger.warning(f"  ❌ {url.get('url'):30} | DOWN | {e}")
-            return {"url": url, "status": None, "ping_ms": None, "is_up": False, "error": str(e)}
+            return {
+                "url": url,
+                "status": None,
+                "ping_ms": None,
+                "is_up": False,
+                "error": str(e)
+            }
 
 
 async def monitor_job():

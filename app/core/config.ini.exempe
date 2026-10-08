@@ -3,21 +3,16 @@ db_host = localhost
 db_port = 5432
 db_user = db_admin
 db_user_pass = db_admin
-db_core_role =
-db_core_role_pass =
-db_background_role =
-db_background_role_pass =
-db_foreground_role =
-db_foreground_role_pass =
 db_name = uptimemonitor
 db_schema_name = app
 pool_recycle = 3600
 
+[Cache]
+maxsize = 1024
+time_to_life = 600
+
 [Requester]
 simultaneous_requests = 50
-
-[DSN]
-db_dsn_user = postgresql://${DataBase:db_user}:${DataBase:db_user_pass}@${DataBase:db_host}:${DataBase:db_port}/${DataBase:db_name}
 
 [TgBot]
 token =

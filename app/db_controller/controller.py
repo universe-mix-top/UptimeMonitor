@@ -14,7 +14,12 @@ class ControllerDb:
     host = db_config['db_host'] if db_config['db_host'] else 'localhost'
     port = db_config['db_port'] if db_config['db_port'] else '5432'
     search_path = db_config['db_schema_name'] if db_config['db_schema_name'] else 'public'
-    cache = TTLCache(maxsize=1024, ttl=600)  # 10 минут
+    cache_maxsize = config["Cache"]["maxsize"]
+    cache_ttl = config["Cache"]["time_to_life"]
+
+    user_cache = TTLCache(maxsize=cache_maxsize, ttl=cache_ttl)
+    url_cache = TTLCache(maxsize=cache_maxsize, ttl=cache_ttl)
+    monitor_cache = TTLCache(maxsize=cache_maxsize, ttl=cache_ttl)
 
 
     async def connect(self):
@@ -43,7 +48,7 @@ class ControllerDb:
         )
         return int(result[0]) if result else None
 
-    @cached(cache=cache)
+    @cached(cache=user_cache)
     async def get_user_id(self, tg_id: int) -> str | None:
         user_id = await self.pool.fetchrow(
             'SELECT user_id FROM users WHERE tg_id = $1;', tg_id
@@ -52,7 +57,7 @@ class ControllerDb:
             return None
         return user_id.get('user_id')
 
-    @cached(cache=cache)
+    @cached(cache=url_cache)
     async def get_url_id(self, url: str) -> str | None:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -68,7 +73,7 @@ class ControllerDb:
             return None
         return url_id.get('url_id')
 
-    @cached(cache=cache)
+    @cached(cache=monitor_cache)
     async def get_monitor_id(self, url_id: str, timing_id: str | int) -> str | None:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -157,11 +162,7 @@ class ControllerDb:
 
     async def set_requests_log(self, result: dict, timing_id: int) -> None:
         url = result.get('url')
-        if url is None:
-            return
         url_id = url.get('url_id')
-        if url_id is None:
-            return
         res_code = result.get('status')
         ping = result.get('ping_ms')
         await self.pool.execute(
@@ -237,8 +238,9 @@ class ControllerDb:
                 )
                 monitor_id = monitor_id.get('monitor_id') if monitor_id else None
 
-        if monitor_id:
-            await self.del_monitor(monitor_id)
+                if monitor_id:
+                    await self.del_monitor(monitor_id)
+
         return monitor_id
 
 
